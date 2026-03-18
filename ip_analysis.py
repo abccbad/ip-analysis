@@ -46,7 +46,7 @@ st.markdown("""
 
 # ===================== 字体加载 =====================
 def load_chinese_font():
-    """适配Streamlit 3.10 + 云端Linux环境的中文字体加载"""
+    """适配Python 3.10 + 云端Linux环境的中文字体加载"""
     try:
         # Streamlit Cloud(Linux)优先加载开源中文字体，兼容本地Windows/Mac
         font_candidates = [
@@ -256,7 +256,7 @@ if "temp_files" not in st.session_state:
 
 # ===================== 工具函数 =====================
 def cleanup_temp_files():
-    """兼容Streamlit 3.10 + 云端的临时文件清理（容错处理）"""
+    """兼容Python 3.10 + 云端的临时文件清理（容错处理）"""
     try:
         for fp in st.session_state.get("temp_files", []):
             if fp and isinstance(fp, str) and os.path.exists(fp):
@@ -270,7 +270,7 @@ def cleanup_temp_files():
         st.warning(f"临时文件清理失败：{e}")
 
 def generate_chart_images(ip_data, use_cache=True):
-    """适配Streamlit 3.10：保留本地文件生成逻辑（兼容云端临时目录）"""
+    """适配Python 3.10：保留本地文件生成逻辑（兼容云端临时目录）"""
     cache_key = f"{ip_data['id']}_charts"
     if use_cache and cache_key in st.session_state.chart_cache:
         return st.session_state.chart_cache[cache_key]
@@ -290,7 +290,7 @@ def generate_chart_images(ip_data, use_cache=True):
         radar_path = tempfile.mkstemp(suffix='.png', dir=tempfile.gettempdir())[1]
         aud_path = tempfile.mkstemp(suffix='.png', dir=tempfile.gettempdir())[1]
         
-        # 生成图片（适配Plotly在Streamlit 3.10的调用方式）
+        # 生成图片（适配Plotly在Python 3.10的调用方式）
         fig_radar.write_image(radar_path, scale=3)
         fig_aud.write_image(aud_path, scale=3)
         
@@ -812,7 +812,6 @@ def main():
             render_recommend_page()
 
     st.divider()
-
 
 if __name__ == "__main__":
     main()
