@@ -1,4 +1,5 @@
-streamlit==3.10.0
+# 适配 Python 3.10 的正确依赖版本
+streamlit>=1.50.0,<2.0.0  # Streamlit 最新稳定版，兼容Python 3.10
 plotly>=5.15.0
 pandas>=2.0.0
 numpy>=1.23.5
