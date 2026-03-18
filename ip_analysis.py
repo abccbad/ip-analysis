@@ -67,24 +67,44 @@ st.markdown("""
 #     except: return "Arial"
 
 def load_chinese_font():
-    """适配云端Linux环境的中文字体加载"""
+    """
+    适配本地Windows + 云端Linux的中文字体加载
+    优先顺序：云端Linux字体 → 本地Windows字体 → 兜底西文字体
+    """
     try:
-        # 优先加载云端可用的中文字体
-        font_candidates = [
-            ("WenQuanYi Micro Hei", "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"),
-            ("SimHei", "/usr/share/fonts/truetype/liberation/simhei.ttf"),
-            ("Arial", None)
-        ]
-        for font_name, font_path in font_candidates:
+        # 定义字体映射表（名称: 路径）
+        font_mapping = {
+            # 云端Linux环境（Streamlit Cloud 自带）
+            "WenQuanYi Micro Hei": "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+            "DejaVu Sans": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            # 本地Windows环境
+            "SimHei": "C:/Windows/Fonts/simhei.ttf",
+            "Microsoft YaHei": "C:/Windows/Fonts/msyh.ttc",
+            # 兜底（仅西文）
+            "Arial": None
+        }
+
+        # 遍历加载字体
+        for font_name, font_path in font_mapping.items():
             try:
-                if font_path and os.path.exists(font_path):
+                # 跳过无路径的兜底字体
+                if not font_path:
+                    continue
+                # 检查字体文件是否存在
+                if os.path.exists(font_path):
+                    # 注册字体（支持中文）
                     pdfmetrics.registerFont(TTFont(font_name, font_path))
+                    print(f"成功加载字体: {font_name}")
                     return font_name
-            except:
+            except Exception as e:
+                print(f"加载字体 {font_name} 失败: {e}")
                 continue
-        return "Arial"
-    except:
-        return "Arial"
+        
+        # 兜底：返回云端/本地都兼容的西文+中文兼容字体名
+        return "WenQuanYi Micro Hei"  # 云端必有的中文字体
+    except Exception as e:
+        print(f"字体加载总失败: {e}")
+        return "Arial"  # 最后兜底（仅保证不崩溃，中文会显示方块）
 
 
 
