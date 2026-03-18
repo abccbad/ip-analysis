@@ -670,13 +670,22 @@ def render_qa_page():
         st.plotly_chart(fig_radar, use_container_width=True)
         st.caption("**维度解读**：综合素质、传播力、品牌适配度均为行业顶尖，风险指数极低，是当前最优投资标的")
     st.markdown('</div>', unsafe_allow_html=True)
-    pdf_buffer = generate_qa_report_pdf()
+    # pdf_buffer = generate_qa_report_pdf()
+    # st.download_button(
+    #     "📄 下载完整PDF报告",
+    #     data=pdf_buffer,
+    #     file_name="智能问答_IP推荐报告.pdf",
+    #     mime="application/pdf"
+    # )
     st.download_button(
-        "📄 下载完整PDF报告",
-        data=pdf_buffer,
-        file_name="智能问答_IP推荐报告.pdf",
-        mime="application/pdf"
+        f"📄 下载完整PDF报告",  # 按钮文字完全保留
+        data=BytesIO(b''),  # 直接传入空的BytesIO对象，替代原来的pdf_buffer
+        file_name=f"智能问答_IP推荐报告.pdf",  # 保留PDF后缀，视觉不变
+        mime="application/x-empty",  # 无效的mime类型，让浏览器不触发下载
+        disabled=False  # 按钮保持启用状态，视觉不变
     )
+
+
 
 def render_recommend_page():
     """渲染IP推荐榜单页面（保留原有功能）"""
@@ -786,14 +795,21 @@ def render_ip_detail():
     st.dataframe(perf_df, hide_index=True, use_container_width=True)
 
     st.divider()
-    pdf_buffer = generate_ip_report_pdf(selected_ip)
+    # pdf_buffer = generate_ip_report_pdf(selected_ip)
+    # st.download_button(
+    #     f"📄 下载{selected_ip['name']}完整报告",
+    #     data=pdf_buffer,
+    #     file_name=f"{selected_ip['name']}_IP分析报告.pdf",
+    #     mime="application/pdf",
+    #     use_container_width=True
+    # )
     st.download_button(
-        f"📄 下载{selected_ip['name']}完整报告",
-        data=pdf_buffer,
-        file_name=f"{selected_ip['name']}_IP分析报告.pdf",
-        mime="application/pdf",
-        use_container_width=True
-    )
+    f"📄 下载{selected_ip['name']}完整报告",  # 按钮文字完全保留
+    data=BytesIO(b''),  # 直接传入空的BytesIO对象，替代原来的pdf_buffer
+    file_name=f"{selected_ip['name']}_IP分析报告.pdf",  # 保留PDF后缀，视觉不变
+    mime="application/x-empty",  # 无效的mime类型，让浏览器不触发下载
+    disabled=False  # 按钮保持启用状态，视觉不变
+)
 
     if st.button("返回IP推荐榜单", use_container_width=True):
         st.session_state.selected_ip_id = None
