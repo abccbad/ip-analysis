@@ -667,7 +667,6 @@ def render_qa_page():
         st.caption("**维度解读**：综合素质、传播力、品牌适配度均为行业顶尖，风险指数极低，是当前最优投资标的")
     st.markdown('</div>', unsafe_allow_html=True)
     pdf_buffer = generate_qa_report_pdf()
-    #pdf_buffer="报告生成中……"
     st.download_button(
         "📄 下载完整PDF报告",
         data=pdf_buffer,
@@ -783,8 +782,7 @@ def render_ip_detail():
     st.dataframe(perf_df, hide_index=True, use_container_width=True)
 
     st.divider()
-    #pdf_buffer = generate_ip_report_pdf(selected_ip)
-    pdf_buffer = "报告生成中……"
+    pdf_buffer = generate_ip_report_pdf(selected_ip)
     st.download_button(
         f"📄 下载{selected_ip['name']}完整报告",
         data=pdf_buffer,
