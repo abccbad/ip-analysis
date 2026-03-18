@@ -46,13 +46,13 @@ st.markdown("""
 
 # ===================== 字体加载 =====================
 def load_chinese_font():
-    """适配Streamlit Cloud(Linux)环境的中文字体加载（兼容本地）"""
+    """适配Streamlit 3.10 + 云端Linux环境的中文字体加载"""
     try:
-        # Streamlit Cloud优先加载开源中文字体，本地兼容Windows/Mac
+        # Streamlit Cloud(Linux)优先加载开源中文字体，兼容本地Windows/Mac
         font_candidates = [
             # Streamlit Cloud 内置中文字体
             ("WenQuanYi Micro Hei", "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"),
-            # Linux通用字体
+            # Linux通用字体（备用）
             ("DejaVu Sans", None),
             # 本地Windows兼容
             ("SimHei", "C:/Windows/Fonts/simhei.ttf"),
@@ -256,7 +256,7 @@ if "temp_files" not in st.session_state:
 
 # ===================== 工具函数 =====================
 def cleanup_temp_files():
-    """兼容云端的临时文件清理（容错处理）"""
+    """兼容Streamlit 3.10 + 云端的临时文件清理（容错处理）"""
     try:
         for fp in st.session_state.get("temp_files", []):
             if fp and isinstance(fp, str) and os.path.exists(fp):
@@ -270,7 +270,7 @@ def cleanup_temp_files():
         st.warning(f"临时文件清理失败：{e}")
 
 def generate_chart_images(ip_data, use_cache=True):
-    """适配云端：Plotly图表转字节流（避免本地文件依赖）"""
+    """适配Streamlit 3.10：保留本地文件生成逻辑（兼容云端临时目录）"""
     cache_key = f"{ip_data['id']}_charts"
     if use_cache and cache_key in st.session_state.chart_cache:
         return st.session_state.chart_cache[cache_key]
@@ -281,22 +281,22 @@ def generate_chart_images(ip_data, use_cache=True):
         radar_values = [ip_data['comprehensive']/2, ip_data['communication']/8, list(ip_data['risk'].values()).index(ip_data['risk']['level'])+1, ip_data['topic'], ip_data['brand_fit']]
         fig_radar = go.Figure(go.Scatterpolar(r=radar_values, theta=radar_labels, fill='toself', line=dict(color='#2563eb', width=3), fillcolor='rgba(37, 99, 235, 0.3)', marker=dict(size=10, color='#2563eb')))
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 10], tickvals=[0,2,4,6,8,10]), angularaxis=dict(tickfont=dict(size=12))), showlegend=False, width=500, height=500, margin=dict(l=40, r=60, t=40, b=40), font=dict(family=CHINESE_FONT))
-        
         # 柱状图
         df_aud = pd.DataFrame(list(ip_data['audience'].items()), columns=["受众类型", "占比(%)"])
         fig_aud = px.bar(df_aud, x="受众类型", y="占比(%)", color_discrete_sequence=["#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"])
         fig_aud.update_layout(width=800, height=450, margin=dict(l=40, r=40, t=40, b=60), showlegend=False, font=dict(family=CHINESE_FONT))
         
-        # 生成字节流（替代本地文件）
-        radar_bytes = fig_radar.to_image(format="png", scale=3)
-        aud_bytes = fig_aud.to_image(format="png", scale=3)
+        # 使用云端可写的临时目录（关键适配）
+        radar_path = tempfile.mkstemp(suffix='.png', dir=tempfile.gettempdir())[1]
+        aud_path = tempfile.mkstemp(suffix='.png', dir=tempfile.gettempdir())[1]
         
-        # 保存到临时BytesIO对象
-        radar_io = BytesIO(radar_bytes)
-        aud_io = BytesIO(aud_bytes)
+        # 生成图片（适配Plotly在Streamlit 3.10的调用方式）
+        fig_radar.write_image(radar_path, scale=3)
+        fig_aud.write_image(aud_path, scale=3)
         
-        st.session_state.chart_cache[cache_key] = (radar_io, aud_io)
-        return radar_io, aud_io
+        st.session_state.temp_files.extend([radar_path, aud_path])
+        st.session_state.chart_cache[cache_key] = (radar_path, aud_path)
+        return radar_path, aud_path
     except Exception as e:
         st.error(f"图表生成失败: {str(e)}")
         return None, None
@@ -407,11 +407,13 @@ def generate_qa_report_pdf():
                 width=1000, height=400, font=dict(family=CHINESE_FONT)
             )
             
-            # 生成字节流替代本地文件
-            trend_bytes = fig_t.to_image(format="png", scale=3)
-            trend_io = BytesIO(trend_bytes)
+            # 使用云端可写临时目录
+            trend_pdf = tempfile.mkstemp(suffix='.png', dir=tempfile.gettempdir())[1]
+            fig_t.write_image(trend_pdf, scale=3)
+            st.session_state.temp_files.append(trend_pdf)
+            
             elements.append(Paragraph("1. 热度趋势图", section_style))
-            elements.append(Image(trend_io, width=page_width*0.9, height=280, hAlign='CENTER'))
+            elements.append(Image(trend_pdf, width=page_width*0.9, height=280, hAlign='CENTER'))
             elements.append(Spacer(1, 10))
             
             elements.append(Paragraph("2. 10大维度评分雷达图", section_style))
@@ -434,10 +436,12 @@ def generate_qa_report_pdf():
                 width=600, height=600, font=dict(family=CHINESE_FONT)
             )
             
-            # 生成字节流替代本地文件
-            radar_10_bytes = fig_radar_10.to_image(format="png", scale=3)
-            radar_10_io = BytesIO(radar_10_bytes)
-            elements.append(Image(radar_10_io, width=page_height*0.45, height=page_height*0.45, hAlign='CENTER'))
+            # 使用云端可写临时目录
+            radar_10_path = tempfile.mkstemp(suffix='.png', dir=tempfile.gettempdir())[1]
+            fig_radar_10.write_image(radar_10_path, scale=3)
+            st.session_state.temp_files.append(radar_10_path)
+            
+            elements.append(Image(radar_10_path, width=page_height*0.45, height=page_height*0.45, hAlign='CENTER'))
             doc.build(elements)
             buf.seek(0)
             return buf
@@ -446,7 +450,7 @@ def generate_qa_report_pdf():
         return generate_text_report(f"智能问答报告生成失败：{str(e)}")
 
 def generate_ip_report_pdf(ip):
-    """生成单个IP的PDF报告（含丰富文字分析）"""
+    """生成单个IP的PDF报告（保留原有完整功能）"""
     try:
         with st.spinner(f"正在生成《{ip['name']}》PDF报告..."):
             time.sleep(0.5)
@@ -532,14 +536,14 @@ def generate_ip_report_pdf(ip):
             elements.append(Spacer(1, 10))
             
             elements.append(Paragraph("六、核心维度评分", section_style))
-            radar_io, aud_io = generate_chart_images(ip)
-            if radar_io:
-                elements.append(Image(radar_io, width=200, height=200, hAlign='CENTER'))
+            radar_img, aud_img = generate_chart_images(ip)
+            if radar_img:
+                elements.append(Image(radar_img, width=200, height=200, hAlign='CENTER'))
             elements.append(Spacer(1, 10))
             
             elements.append(Paragraph("七、受众画像图表", section_style))
-            if aud_io:
-                elements.append(Image(aud_io, width=380, height=220, hAlign='CENTER'))
+            if aud_img:
+                elements.append(Image(aud_img, width=380, height=220, hAlign='CENTER'))
             elements.append(Spacer(1, 10))
             
             elements.append(Paragraph("八、投放策略建议", section_style))
@@ -570,19 +574,19 @@ def generate_ip_report_pdf(ip):
 
 # ===================== 页面渲染 =====================
 def render_qa_page():
-    """渲染智能问答页面（修复趋势图+丰富文字分析）"""
+    """渲染智能问答页面（完全保留原有格式和功能）"""
     st.markdown('<div class="title-main">智能问答：未来7天热门投资IP推荐</div>', unsafe_allow_html=True)
     st.caption("提问 → 智能分析 → 推荐+图表+专业报告")
 
     st.markdown('<div class="module-box">', unsafe_allow_html=True)
     st.markdown('<div style="display:flex;align-items:center"><span class="step-tag">1</span><span class="title-sub">用户提问</span></div>', unsafe_allow_html=True)
-    # 修复：给label传非空值，用label_visibility隐藏
+    # 保留原有修复：非空label + 隐藏
     st.text_area(
-        "用户提问内容",  # 非空label（关键修复点）
+        "用户提问内容",
         "业务人员提问：我想知道未来7天，有什么IP是比较火的，值得投资的？请给出具体IP推荐、核心数据支撑及投资建议。",
         height=80, 
         disabled=True, 
-        label_visibility="hidden"  # 隐藏标签（而不是用空字符串）
+        label_visibility="hidden"
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -675,7 +679,7 @@ def render_qa_page():
     )
 
 def render_recommend_page():
-    """渲染IP推荐榜单页面"""
+    """渲染IP推荐榜单页面（保留原有功能）"""
     st.header("IP推荐榜单", divider="red")
     col1, col2 = st.columns([4,1])
     with col1:
@@ -702,7 +706,7 @@ def render_recommend_page():
                     st.rerun()
 
 def render_ip_detail():
-    """渲染IP详情页面（修复布局+丰富文字分析）"""
+    """渲染IP详情页面（保留原有完整格式）"""
     selected_ip = next((ip for ip in all_ip_data if ip['id'] == st.session_state.selected_ip_id), None)
     if not selected_ip:
         st.warning("未选择任何IP，请返回榜单选择")
@@ -808,9 +812,7 @@ def main():
             render_recommend_page()
 
     st.divider()
-    # if st.button("🧹 清理临时文件", use_container_width=True):
-    #     cleanup_temp_files()
-    #     st.toast("临时文件已清理完成！", icon="✅")
+
 
 if __name__ == "__main__":
     main()
