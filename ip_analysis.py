@@ -810,9 +810,9 @@ def main():
             render_recommend_page()
 
     st.divider()
-    if st.button("🧹 清理临时文件", use_container_width=True):
-        cleanup_temp_files()
-        st.toast("临时文件已清理完成！", icon="✅")
+    # if st.button("🧹 清理临时文件", use_container_width=True):
+    #     cleanup_temp_files()
+    #     st.toast("临时文件已清理完成！", icon="✅")
 
 if __name__ == "__main__":
     main()
