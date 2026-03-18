@@ -45,76 +45,38 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ===================== 字体加载 =====================
-# def load_chinese_font():
-#     """加载系统中文字体"""
-#     try:
-#         system = platform.system()
-#         font_candidates = []
-#         if system == "Windows":
-#             font_candidates = [("SimHei", "C:/Windows/Fonts/simhei.ttf"), ("Microsoft YaHei", "C:/Windows/Fonts/msyh.ttc")]
-#         elif system == "Darwin":
-#             font_candidates = [("PingFangSC", "/System/Library/Fonts/PingFang.ttc"), ("Heiti SC", "/System/Library/Fonts/STHeiti Light.ttc")]
-#         else:
-#             font_candidates = [("SimHei", "/usr/share/fonts/truetype/liberation/simhei.ttf"), ("WenQuanYi Micro Hei", "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc")]
-        
-#         for font_name, font_path in font_candidates:
-#             try:
-#                 if font_path and os.path.exists(font_path):
-#                     pdfmetrics.registerFont(TTFont(font_name, font_path))
-#                     return font_name
-#             except: continue
-#         return "Arial"
-#     except: return "Arial"
-
-def generate_text_report(content):
-    """兜底生成纯文本报告"""
-    buf = BytesIO()
-    buf.write(content.encode('utf-8'))
-    buf.seek(0)
-    return buf
-
-
 def load_chinese_font():
-    """
-    适配本地Windows + 云端Linux的中文字体加载
-    优先顺序：云端Linux字体 → 本地Windows字体 → 兜底西文字体
-    """
+    """适配Streamlit Cloud(Linux)环境的中文字体加载（兼容本地）"""
     try:
-        # 定义字体映射表（名称: 路径）
-        font_mapping = {
-            # 云端Linux环境（Streamlit Cloud 自带）
-            "WenQuanYi Micro Hei": "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
-            "DejaVu Sans": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            # 本地Windows环境
-            "SimHei": "C:/Windows/Fonts/simhei.ttf",
-            "Microsoft YaHei": "C:/Windows/Fonts/msyh.ttc",
-            # 兜底（仅西文）
-            "Arial": None
-        }
-
-        # 遍历加载字体
-        for font_name, font_path in font_mapping.items():
+        # Streamlit Cloud优先加载开源中文字体，本地兼容Windows/Mac
+        font_candidates = [
+            # Streamlit Cloud 内置中文字体
+            ("WenQuanYi Micro Hei", "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"),
+            # Linux通用字体
+            ("DejaVu Sans", None),
+            # 本地Windows兼容
+            ("SimHei", "C:/Windows/Fonts/simhei.ttf"),
+            ("Microsoft YaHei", "C:/Windows/Fonts/msyh.ttc"),
+            # Mac兼容
+            ("PingFangSC", "/System/Library/Fonts/PingFang.ttc"),
+            # 兜底
+            ("Arial", None)
+        ]
+        
+        for font_name, font_path in font_candidates:
             try:
-                # 跳过无路径的兜底字体
-                if not font_path:
-                    continue
-                # 检查字体文件是否存在
-                if os.path.exists(font_path):
-                    # 注册字体（支持中文）
+                if font_path and os.path.exists(font_path):
                     pdfmetrics.registerFont(TTFont(font_name, font_path))
-                    print(f"成功加载字体: {font_name}")
+                    return font_name
+                elif font_path is None:
+                    # 系统内置字体无需路径
                     return font_name
             except Exception as e:
-                print(f"加载字体 {font_name} 失败: {e}")
                 continue
-        
-        # 兜底：返回云端/本地都兼容的西文+中文兼容字体名
-        return "WenQuanYi Micro Hei"  # 云端必有的中文字体
+        return "Arial"
     except Exception as e:
-        print(f"字体加载总失败: {e}")
-        return "Arial"  # 最后兜底（仅保证不崩溃，中文会显示方块）
-
-
+        st.warning(f"字体加载降级为默认：{e}")
+        return "Arial"
 
 CHINESE_FONT = load_chinese_font()
 
@@ -250,7 +212,7 @@ all_ip_data = [
         "performance": {"roi": "175%", "payback": "50天", "brand_voice": "140%", "conversion": "22%", "heat_peak": "20/25 (D+2)"},
         "analysis": {
             "value": "母婴垂类头部KOL，专业信任度高，带货能力强，是母婴品类的高效转化渠道",
-            "audience": "25-40岁宝妈占比95%，新手父母92%，高线城市用户85%，是典型的“新手妈妈”人群，对专业推荐信任度高、转化意愿强",
+            "audience": "25-40岁宝妈占比95%，新手父母92%，高线城市用户85%，高消费能力用户82%，是典型的“新手妈妈”人群，对专业推荐信任度高、转化意愿强",
             "strategy": "合作风险低，建议锁定独家直播带货权益，配合KOL专业测评内容，快速提升产品销量",
             "roi": "预计50天回本，ROI达175%，核心驱动是高信任度带来的高转化，品牌声量可提升140%"
         }
@@ -293,36 +255,22 @@ if "temp_files" not in st.session_state:
     st.session_state.temp_files = []
 
 # ===================== 工具函数 =====================
-# def cleanup_temp_files():
-#     for fp in st.session_state.temp_files:
-#         try:
-#             if os.path.exists(fp): os.remove(fp)
-#         except: pass
-#     st.session_state.temp_files = []
-#     st.session_state.chart_cache = {}
-
 def cleanup_temp_files():
-    """兼容云端的临时文件清理"""
+    """兼容云端的临时文件清理（容错处理）"""
     try:
         for fp in st.session_state.get("temp_files", []):
-            if fp and os.path.exists(fp):
-                os.remove(fp)
+            if fp and isinstance(fp, str) and os.path.exists(fp):
+                try:
+                    os.remove(fp)
+                except Exception as e:
+                    st.warning(f"清理临时文件 {fp} 失败：{e}")
         st.session_state["temp_files"] = []
         st.session_state["chart_cache"] = {}
     except Exception as e:
         st.warning(f"临时文件清理失败：{e}")
 
-
-
-try:
-    st.runtime.scriptrunner.add_script_run_ctx(cleanup_temp_files)
-except: pass
-
-
-
-
-
 def generate_chart_images(ip_data, use_cache=True):
+    """适配云端：Plotly图表转字节流（避免本地文件依赖）"""
     cache_key = f"{ip_data['id']}_charts"
     if use_cache and cache_key in st.session_state.chart_cache:
         return st.session_state.chart_cache[cache_key]
@@ -333,18 +281,22 @@ def generate_chart_images(ip_data, use_cache=True):
         radar_values = [ip_data['comprehensive']/2, ip_data['communication']/8, list(ip_data['risk'].values()).index(ip_data['risk']['level'])+1, ip_data['topic'], ip_data['brand_fit']]
         fig_radar = go.Figure(go.Scatterpolar(r=radar_values, theta=radar_labels, fill='toself', line=dict(color='#2563eb', width=3), fillcolor='rgba(37, 99, 235, 0.3)', marker=dict(size=10, color='#2563eb')))
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 10], tickvals=[0,2,4,6,8,10]), angularaxis=dict(tickfont=dict(size=12))), showlegend=False, width=500, height=500, margin=dict(l=40, r=60, t=40, b=40), font=dict(family=CHINESE_FONT))
+        
         # 柱状图
         df_aud = pd.DataFrame(list(ip_data['audience'].items()), columns=["受众类型", "占比(%)"])
         fig_aud = px.bar(df_aud, x="受众类型", y="占比(%)", color_discrete_sequence=["#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"])
         fig_aud.update_layout(width=800, height=450, margin=dict(l=40, r=40, t=40, b=60), showlegend=False, font=dict(family=CHINESE_FONT))
-        # 保存
-        radar_path = tempfile.mktemp(suffix='.png')
-        aud_path = tempfile.mktemp(suffix='.png')
-        fig_radar.write_image(radar_path, scale=3)
-        fig_aud.write_image(aud_path, scale=3)
-        st.session_state.temp_files.extend([radar_path, aud_path])
-        st.session_state.chart_cache[cache_key] = (radar_path, aud_path)
-        return radar_path, aud_path
+        
+        # 生成字节流（替代本地文件）
+        radar_bytes = fig_radar.to_image(format="png", scale=3)
+        aud_bytes = fig_aud.to_image(format="png", scale=3)
+        
+        # 保存到临时BytesIO对象
+        radar_io = BytesIO(radar_bytes)
+        aud_io = BytesIO(aud_bytes)
+        
+        st.session_state.chart_cache[cache_key] = (radar_io, aud_io)
+        return radar_io, aud_io
     except Exception as e:
         st.error(f"图表生成失败: {str(e)}")
         return None, None
@@ -369,7 +321,6 @@ def generate_qa_report_pdf():
             doc.addPageTemplates([PageTemplate(id='all', frames=[frame])])
             
             styles = getSampleStyleSheet()
-            # 修复：确保字体使用全局中文字体
             title_style = ParagraphStyle(
                 'title', parent=styles['Heading1'],
                 fontSize=16, alignment=TA_CENTER, fontName=CHINESE_FONT,
@@ -431,7 +382,7 @@ def generate_qa_report_pdf():
             elements.append(PageBreak())
             
             elements.append(Paragraph("四、核心数据图表", section_style))
-            # 修复趋势图：简化标签+适配中文字体
+            # 修复趋势图：前半段历史，后半段预测
             days = ["D-7","D-6","D-5","D-4","D-3","D-2","D-1","D0","D+1","D+2","D+3","D+4","D+5","D+6","D+7"]
             history = [20,25,30,35,40,45,50,60,70,80,85,82,78,75,70]
             predict = [60,65,70,75,80,85,90,95,100,98,95,90,85,80,75]
@@ -451,25 +402,20 @@ def generate_qa_report_pdf():
                 line=dict(color='#93c5fd', width=2, dash='dash')
             ))
             fig_t.update_layout(
-                title=dict(text="《好好的时光》热度趋势分析", x=0.5, font=dict(family=CHINESE_FONT)),
+                title=dict(text="《好好的时光》热度趋势分析", x=0.5),
                 xaxis_title="时间维度", yaxis_title="热度值",
-                width=800, height=400,  # 缩小尺寸避免PDF溢出
-                font=dict(family=CHINESE_FONT, size=10)
+                width=1000, height=400, font=dict(family=CHINESE_FONT)
             )
-            # 修复：使用临时文件并确保清理
-            trend_pdf = tempfile.mktemp(suffix='.png')
-            fig_t.write_image(trend_pdf, scale=2)  # 降低scale避免文件过大
-            if "temp_files" not in st.session_state:
-                st.session_state.temp_files = []
-            st.session_state.temp_files.append(trend_pdf)
             
+            # 生成字节流替代本地文件
+            trend_bytes = fig_t.to_image(format="png", scale=3)
+            trend_io = BytesIO(trend_bytes)
             elements.append(Paragraph("1. 热度趋势图", section_style))
-            elements.append(Image(trend_pdf, width=page_width*0.8, height=250, hAlign='CENTER'))
+            elements.append(Image(trend_io, width=page_width*0.9, height=280, hAlign='CENTER'))
             elements.append(Spacer(1, 10))
             
             elements.append(Paragraph("2. 10大维度评分雷达图", section_style))
-            # 修复：缩短雷达图标签，避免文字截断
-            labels_10 = ["综合(80)","传播(78)","风险(2)","热度(60)","趋势(66)",
+            labels_10 = ["综合素质(80)","传播裂变(78)","风险(2)","热度(60)","趋势(66)",
                         "商业(70)","话题(70)","适配(75)","情感(72)","圈层(70)"]
             values_10 =[80,78,2,60,66,70,70,75,72,70]
             industry_values = [60,60,5,60,60,60,60,60,60,60]
@@ -485,32 +431,19 @@ def generate_qa_report_pdf():
             ))
             fig_radar_10.update_layout(
                 polar=dict(radialaxis=dict(range=[0, 80])),
-                width=500, height=500,  # 固定正方形避免拉伸
-                font=dict(family=CHINESE_FONT, size=9)  # 缩小字体
+                width=600, height=600, font=dict(family=CHINESE_FONT)
             )
-            radar_10_path = tempfile.mktemp(suffix='.png')
-            fig_radar_10.write_image(radar_10_path, scale=2)
-            st.session_state.temp_files.append(radar_10_path)
             
-            elements.append(Image(radar_10_path, width=page_height*0.4, height=page_height*0.4, hAlign='CENTER'))
-            
-            # 关键修复：添加字体注册到PDF文档
+            # 生成字节流替代本地文件
+            radar_10_bytes = fig_radar_10.to_image(format="png", scale=3)
+            radar_10_io = BytesIO(radar_10_bytes)
+            elements.append(Image(radar_10_io, width=page_height*0.45, height=page_height*0.45, hAlign='CENTER'))
             doc.build(elements)
             buf.seek(0)
             return buf
     except Exception as e:
         st.error(f"PDF生成失败: {str(e)}")
-        # 兜底生成纯文本报告
-        text_report = f"""智能问答：未来7天热门投资IP推荐报告
-        
-生成失败原因：{str(e)}
-
-核心推荐内容：
-1. 《好好的时光》：综合80，传播78，风险低，ROI 210%，预算60-85万
-2. 巧虎：综合75，传播66，ROI 180%，预算50-70万
-3. 2026中国亲子运动会：综合60，官方背书，ROI 170%，预算70-90万
-"""
-        return generate_text_report(text_report)
+        return generate_text_report(f"智能问答报告生成失败：{str(e)}")
 
 def generate_ip_report_pdf(ip):
     """生成单个IP的PDF报告（含丰富文字分析）"""
@@ -550,10 +483,6 @@ def generate_ip_report_pdf(ip):
             elements.append(Spacer(1, 15))
             
             elements.append(Paragraph("一、IP综合价值定位", section_style))
-            # 兼容：如果ip没有analysis字段，添加默认值
-            if 'analysis' not in ip or 'value' not in ip['analysis']:
-                ip['analysis'] = ip.get('analysis', {})
-                ip['analysis']['value'] = ip['analysis'].get('value', f"{ip['name']} 为{ip['type']}，核心驱动：{ip['driver']}")
             elements.append(Paragraph(ip['analysis']['value'], normal_style))
             elements.append(Spacer(1, 8))
             
@@ -566,11 +495,11 @@ def generate_ip_report_pdf(ip):
                 ['综合评分', f"{ip['comprehensive']}/20"],
                 ['传播裂变力', f"{ip['communication']}/80"]
             ]
-            base_table = Table(base_data, colWidths=[100, 280])  # 缩小列宽避免溢出
+            base_table = Table(base_data, colWidths=[120, 300])
             base_table.setStyle(TableStyle([
                 ('GRID', (0,0), (-1,-1), 1, colors.grey),
                 ('FONTNAME', (0,0), (-1,-1), CHINESE_FONT),
-                ('FONTSIZE', (0,0), (-1,-1), 9),  # 缩小字体
+                ('FONTSIZE', (0,0), (-1,-1), 10),
                 ('BACKGROUND', (0,0), (-1,0), colors.lightblue),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ]))
@@ -578,7 +507,6 @@ def generate_ip_report_pdf(ip):
             elements.append(Spacer(1, 10))
             
             elements.append(Paragraph("三、受众深度画像", section_style))
-            ip['analysis']['audience'] = ip['analysis'].get('audience', f"核心受众：{', '.join([f'{k}({v}%)' for k,v in ip['audience'].items()])}")
             elements.append(Paragraph(ip['analysis']['audience'], normal_style))
             elements.append(Spacer(1, 8))
             
@@ -588,11 +516,11 @@ def generate_ip_report_pdf(ip):
                 ['风险等级', ip['risk']['level']],
                 ['操作建议', ip['risk']['suggestion']]
             ]
-            risk_table = Table(risk_data, colWidths=[100, 280])
+            risk_table = Table(risk_data, colWidths=[120, 300])
             risk_table.setStyle(TableStyle([
                 ('GRID', (0,0), (-1,-1), 1, colors.grey),
                 ('FONTNAME', (0,0), (-1,-1), CHINESE_FONT),
-                ('FONTSIZE', (0,0), (-1,-1), 9),
+                ('FONTSIZE', (0,0), (-1,-1), 10),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ]))
             elements.append(risk_table)
@@ -604,70 +532,41 @@ def generate_ip_report_pdf(ip):
             elements.append(Spacer(1, 10))
             
             elements.append(Paragraph("六、核心维度评分", section_style))
-            # 兼容：如果generate_chart_images返回空，跳过
-            try:
-                radar_img, aud_img = generate_chart_images(ip)
-                if radar_img:
-                    elements.append(Image(radar_img, width=180, height=180, hAlign='CENTER'))
-            except:
-                elements.append(Paragraph("（图表生成失败）", normal_style))
+            radar_io, aud_io = generate_chart_images(ip)
+            if radar_io:
+                elements.append(Image(radar_io, width=200, height=200, hAlign='CENTER'))
             elements.append(Spacer(1, 10))
             
             elements.append(Paragraph("七、受众画像图表", section_style))
-            try:
-                if aud_img:
-                    elements.append(Image(aud_img, width=350, height=200, hAlign='CENTER'))
-            except:
-                elements.append(Paragraph("（图表生成失败）", normal_style))
+            if aud_io:
+                elements.append(Image(aud_io, width=380, height=220, hAlign='CENTER'))
             elements.append(Spacer(1, 10))
             
             elements.append(Paragraph("八、投放策略建议", section_style))
-            ip['analysis']['strategy'] = ip['analysis'].get('strategy', f"建议锁定{ip['name']}核心流量位，预算控制在{ip['budget']}，预期ROI {ip['roi']}")
             elements.append(Paragraph(ip['analysis']['strategy'], normal_style))
             elements.append(Spacer(1, 8))
             
             elements.append(Paragraph("九、商业ROI拆解", section_style))
-            ip['analysis']['roi'] = ip['analysis'].get('roi', f"综合ROI {ip['roi']}，回本周期约{ip['performance'].get('payback', '未知')}天")
             elements.append(Paragraph(ip['analysis']['roi'], normal_style))
             elements.append(Spacer(1, 8))
             
             elements.append(Paragraph("十、投放效果预估", section_style))
             perf_data = [['评估维度', '预估数值']] + [[k, v] for k, v in ip['performance'].items()]
-            perf_table = Table(perf_data, colWidths=[100, 280])
+            perf_table = Table(perf_data, colWidths=[120, 300])
             perf_table.setStyle(TableStyle([
                 ('GRID', (0,0), (-1,-1), 1, colors.grey),
                 ('FONTNAME', (0,0), (-1,-1), CHINESE_FONT),
-                ('FONTSIZE', (0,0), (-1,-1), 9),
+                ('FONTSIZE', (0,0), (-1,-1), 10),
                 ('BACKGROUND', (0,0), (-1,0), colors.lightblue),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ]))
             elements.append(perf_table)
-            
             doc.build(elements)
             buf.seek(0)
             return buf
     except Exception as e:
         st.error(f"生成{ip['name']} PDF失败: {str(e)}")
-        # 兜底纯文本报告
-        text_report = f"""【{ip['name']} IP分析报告】
-
-生成失败原因：{str(e)}
-
-基础信息：
-- IP类型：{ip['type']}
-- 预算范围：{ip['budget']}
-- 预期ROI：{ip['roi']}
-- 综合评分：{ip['comprehensive']}/20
-
-核心优势：
-{chr(10).join([f'• {adv}' for adv in ip['advantage']])}
-
-风险提示：
-- 类型：{ip['risk']['type']}
-- 等级：{ip['risk']['level']}
-- 建议：{ip['risk']['suggestion']}
-"""
-        return generate_text_report(text_report)
+        return generate_text_report(f"{ip['name']} 分析报告\n\n生成失败：{str(e)}")
 
 # ===================== 页面渲染 =====================
 def render_qa_page():
@@ -753,7 +652,7 @@ def render_qa_page():
         fig_trend.update_layout(
             xaxis_title="时间维度", yaxis_title="热度值",
             legend=dict(orientation="h", yanchor="bottom", y=1.02),
-            font=dict(family="SimHei")
+            font=dict(family=CHINESE_FONT)
         )
         st.plotly_chart(fig_trend, use_container_width=True)
         st.caption("**趋势解读**：历史热度稳步攀升，D0为剧集开播节点，预测热度将在D+4达到峰值，建议提前布局投放")
@@ -763,7 +662,7 @@ def render_qa_page():
         labels = ["综合素质","传播","风险","热度","趋势","商业","话题","适配","情感","圈层"]
         values = [80,78,2,60,66,70,70,75,72,70]
         fig_radar = go.Figure(go.Scatterpolar(r=values, theta=labels, fill='toself'))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0,80])))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0,80])), font=dict(family=CHINESE_FONT))
         st.plotly_chart(fig_radar, use_container_width=True)
         st.caption("**维度解读**：综合素质、传播力、品牌适配度均为行业顶尖，风险指数极低，是当前最优投资标的")
     st.markdown('</div>', unsafe_allow_html=True)
@@ -855,7 +754,7 @@ def render_ip_detail():
         fig_radar.update_layout(
             polar=dict(radialaxis=dict(range=[0, 10], tickvals=[0,2,4,6,8,10])),
             showlegend=False, width=400, height=400,
-            font=dict(family="SimHei")
+            font=dict(family=CHINESE_FONT)
         )
         st.plotly_chart(fig_radar, use_container_width=True)
 
@@ -868,7 +767,7 @@ def render_ip_detail():
         )
         fig_aud.update_layout(
             width=400, height=400, showlegend=False,
-            font=dict(family="SimHei")
+            font=dict(family=CHINESE_FONT)
         )
         st.plotly_chart(fig_aud, use_container_width=True)
 
