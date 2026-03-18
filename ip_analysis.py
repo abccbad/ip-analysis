@@ -66,6 +66,14 @@ st.markdown("""
 #         return "Arial"
 #     except: return "Arial"
 
+def generate_text_report(content):
+    """兜底生成纯文本报告"""
+    buf = BytesIO()
+    buf.write(content.encode('utf-8'))
+    buf.seek(0)
+    return buf
+
+
 def load_chinese_font():
     """
     适配本地Windows + 云端Linux的中文字体加载
