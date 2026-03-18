@@ -1,5 +1,6 @@
-streamlit>=1.30.0
+streamlit==3.10.0
 plotly>=5.15.0
 pandas>=2.0.0
 numpy>=1.23.5
 reportlab>=4.0.0
+pillow>=9.0.0
