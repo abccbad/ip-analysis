@@ -1,7 +1,8 @@
-# 核心依赖（全部用兼容版本，避免编译）
-streamlit==1.32.2
-plotly==5.19.0
-pandas==2.0.3  # 降级到无需编译的版本
-numpy==1.24.3
-reportlab==4.1.0
-Pillow>=9.5.0,<10.0.0  # 避开10.x的编译问题
+# 适配 Python 3.12+（无 distutils）的版本
+streamlit==1.35.0          # 最新稳定版，兼容3.14
+plotly==5.22.0             # 无编译依赖
+pandas==2.2.2              # 无需 distutils
+numpy==1.26.4              # 适配3.12+，移除distutils依赖
+reportlab==4.2.0           # 纯Python库，无编译
+Pillow==10.3.0             # 预编译轮子，兼容3.14
+setuptools>=65.5.0         # 补充distutils替代依赖
