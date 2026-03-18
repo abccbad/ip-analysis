@@ -1,7 +1,4 @@
-# Python 3.9 专属依赖（全部有预编译轮子，10秒安装完成）
-streamlit==1.32.2
-plotly==5.19.0
-pandas==1.5.3
-numpy==1.23.5
-reportlab==4.1.0
-Pillow==9.5.0  # 3.9 下预编译轮子完美兼容
+streamlit>=1.30.0
+plotly>=5.15.0
+pandas>=2.0
+reportlab>=4.0.0
