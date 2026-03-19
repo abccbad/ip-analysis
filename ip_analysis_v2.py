@@ -976,6 +976,44 @@ with tab1:
             ip_level = ip["level"]
             ip_driver = ip["driver"]
             ip_scores = ip["scores"]
+            
+            # 计算综合评分（基于多个关键维度）
+            # 提取数值进行加权计算
+            def extract_score(score_str):
+                if '/' in score_str:
+                    return float(score_str.split('/')[0])
+                return 0
+            
+            # 获取各维度分数
+            comprehensive = extract_score(ip_scores["IP综合素质"])  # 满分20
+            communication = extract_score(ip_scores["传播裂变力"])  # 满分80
+            risk = extract_score(ip_scores["风险指数"])  # 满分10（反向指标，越低越好）
+            topic = extract_score(ip_scores["话题吸引力"])  # 满分10
+            brand = extract_score(ip_scores["品牌适配度"])  # 满分10
+            emotion = extract_score(ip_scores["情绪感染力"])  # 满分75
+            circle = extract_score(ip_scores["圈层穿透力"])  # 满分15
+            heat = extract_score(ip_scores["热度"])  # 满分25
+            trend = extract_score(ip_scores["热度趋势"])  # 满分25
+            commercial = extract_score(ip_scores["商业价值"])  # 满分10
+            
+            # 加权计算综合得分（转换为百分制）
+            # 权重分配：综合素质20%，传播裂变15%，风险(反向)10%，话题10%，品牌适配15%，情绪10%，圈层5%，热度5%，趋势5%，商业价值5%
+            weighted_score = (
+                (comprehensive / 20 * 20) +  # 综合素质 20分
+                (communication / 80 * 15) +   # 传播裂变 15分
+                ((10 - risk) / 10 * 10) +      # 风险(反向) 10分（风险越低得分越高）
+                (topic / 10 * 10) +             # 话题吸引力 10分
+                (brand / 10 * 15) +              # 品牌适配 15分
+                (emotion / 75 * 10) +             # 情绪感染力 10分
+                (circle / 15 * 5) +                # 圈层穿透力 5分
+                (heat / 25 * 5) +                   # 热度 5分
+                (trend / 25 * 5) +                    # 热度趋势 5分
+                (commercial / 10 * 5)                  # 商业价值 5分
+            )
+            
+            # 四舍五入保留整数，并确保不超过100
+            composite_score = min(round(weighted_score), 100)
+            
             card_class_str = card_class
             tag_class_str = tag_class
 
@@ -986,6 +1024,7 @@ with tab1:
                     <div class="ip-header">
                         <div class="ip-title">{ip_id}. {ip_name}</div>
                         <div class="ip-tags">
+                            <span class="ip-tag" style="background:#fee2e2; color:#dc2626; font-weight:700; border:1px solid #fecaca;">综合 {composite_score}</span>
                             <span class="ip-tag">{ip_type}</span>
                             <span class="{tag_class_str}">{ip_level}</span>
                         </div>
