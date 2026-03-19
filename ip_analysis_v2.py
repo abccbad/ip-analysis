@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import time, re
 from datetime import datetime
-
+from streamlit_modal import Modal
 # 页面基础配置
 st.set_page_config(
     page_title="IP投资智能分析平台",
@@ -67,6 +67,7 @@ div.stTextInput > div > div > input:focus { border-color:#e5392e!important; }
 ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
 
 /* IP推荐榜单样式 */
+/* IP推荐榜单样式 - 仅保留实际使用的样式 */
 .stApp {
     background-color: #f5f7fa;
 }
@@ -170,101 +171,8 @@ div.stTextInput > div > div > input:focus { border-color:#e5392e!important; }
     color: #ffffff;
     border-color: #2563eb;
 }
-.filter-bar {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 10px 15px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-}
-.filter-label {
-    font-size: 14px;
-    color: #4b5563;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.filter-arrow {
-    transition: transform 0.2s;
-}
-.filter-arrow.open {
-    transform: rotate(180deg);
-}
-#filter_toggle {
-    display: none !important;
-}
-.filter-panel {
-    background: #1f1f1f;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-}
-.filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-}
-.filter-tag {
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 16px;
-    color: #ffffff;
-    background: #333333;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.filter-tag.active {
-    background: #4a4a4a;
-    color: #ffffff;
-}
-.filter-tag:hover {
-    background: #555555;
-}
-.action-bar {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-bottom: 18px;
-}
-.action-bar .stDownloadButton > button {
-    padding: 6px 16px;
-    border-radius: 4px;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid #d1d5db;
-    background: #fff;
-    color: #374151;
-}
-.action-bar .stDownloadButton:first-child > button {
-    border-color: #2563eb;
-    color: #2563eb;
-    font-weight: 500;
-}
 .stDownloadButton {
     margin-right: 0 !important;
-}
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
 }
 .modal-content {
     background: #ffffff;
@@ -277,38 +185,44 @@ div.stTextInput > div > div > input:focus { border-color:#e5392e!important; }
     position: relative;
     z-index: 99998;
 }
-.modal-close-btn {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: white;
-    border: 1px solid #e5e7eb;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    cursor: pointer;
-    z-index: 99999 !important;
-    pointer-events: auto !important;
-}
-.modal-close-btn:hover {
-    background: #2563eb;
-    color: white;
-    border-color: #2563eb;
-}
 .modal-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #111;
-    margin-bottom: 20px;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
+    width: 100%;
 }
+
+/* 关闭按钮样式 */
+button[key="close_modal_top"] {
+    background: transparent !important;
+    border: none !important;
+    font-size: 20px !important;
+    color: #666 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    float: right;
+}
+button[key="close_modal_top"]:hover {
+    color: #e5392e !important;
+    background: transparent !important;
+}
+button[key="close_modal_bottom"] {
+    background: #f3f4f6 !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+    padding: 4px 12px !important;
+    border-radius: 4px !important;
+    font-size: 13px !important;
+}
+button[key="close_modal_bottom"]:hover {
+    background: #e5e7eb !important;
+}
+
 .report-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -369,30 +283,6 @@ div.stTextInput > div > div > input:focus { border-color:#e5392e!important; }
     font-weight: 500;
     color: #2563eb;
 }
-.audience-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-.audience-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    align-items: center;
-}
-.stat-item {
-    text-align: center;
-}
-.stat-value {
-    font-size: 20px;
-    font-weight: 600;
-    color: #2563eb;
-    margin-bottom: 4px;
-}
-.stat-label {
-    font-size: 12px;
-    color: #6b7280;
-}
 .report-pagination {
     display: flex;
     justify-content: center;
@@ -418,35 +308,28 @@ div.stTextInput > div > div > input:focus { border-color:#e5392e!important; }
     color: #ffffff;
     border-color: #2563eb;
 }
-div[data-testid="stButton"][key^="detail_"] {
-    display: inline-block;
-    margin-left: 6px;
-    vertical-align: middle;
-}
-div[data-testid="stButton"][key^="detail_"] > button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #2563eb;
-    font-size: 16px;
-    padding: 0 5px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: auto;
-    width: auto;
-    height: auto;
-}
-div[data-testid="stButton"][key^="detail_"] > button:hover {
-    color: #1d4ed8;
-}
+
 div[data-testid="stButton"][key^="detail_"] > button::after {
     content: "➡️";
 }
-.arrow-placeholder {
-    display: inline-block;
-    margin-left: 6px;
-    vertical-align: middle;
+
+/* 合并后的modal-overlay样式 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.stPlotlyChart{
+    position: relative;
+    z-index: 1001;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -961,11 +844,13 @@ st.markdown('<div style="display:flex;align-items:center;gap:10px;padding:0 24px
     '<span style="font-size:11px;color:#64748b;">系统运行正常</span>'
     '</div>', unsafe_allow_html=True)
 
+
 # 创建两个tab页
 tab1, tab2 = st.tabs(['📊 每日爆款IP推荐','💬 智能问答'])
 
 # ═══════ TAB 1: IP推荐榜单 ═══════════════════════════════════════════════════════════════
 with tab1:
+    
     # 主标题
     st.markdown("### IP推荐榜单：未来7天热门投资IP")
 
@@ -1033,7 +918,7 @@ with tab1:
 
     # 操作按钮
     col1, col2, col3, col4 = st.columns([8, 2.5, 3, 3])
-    
+
     with col2:
         # 按钮1：下载推荐榜单
         list_content = "\n".join([f"{ip['id']}. {ip['name']} ({ip['type']} | {ip['level']})\n核心驱动：{ip['driver']}" for ip in filtered_ips])
@@ -1047,6 +932,7 @@ with tab1:
 
     with col3:
         # 按钮2：导出10维评分Excel
+        # 在每次页面运行时重新生成Excel文件
         rows = []
         for ip in filtered_ips:
             row = {
@@ -1058,16 +944,25 @@ with tab1:
             row.update(ip['scores'])
             rows.append(row)
         df = pd.DataFrame(rows)
+        
+        # 使用BytesIO和ExcelWriter生成Excel文件
         output = BytesIO()
+        # 将指针移动到开始位置
+        output.seek(0)
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name="IP10维评分")
+        
+        # 获取BytesIO的值
+        excel_data = output.getvalue()
+        
         st.download_button(
             label="📊 导出10维评分Excel",
-            data=output.getvalue(),
+            data=excel_data,
             file_name="IP10维评分数据.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=False
         )
+
 
     # IP卡片列表
     if filtered_ips:
@@ -1141,15 +1036,13 @@ with tab1:
                 </div>
                 """, unsafe_allow_html=True)
 
+            
             with col_arrow:
                 # 添加箭头按钮
-                detail_clicked = st.button("➡️", key=f"detail_{ip['name']}", help=f"查看{ip['name']}详情")
+                if st.button("➡️", key=f"detail_{ip['name']}", help=f"查看{ip['name']}详情"):
+                    st.session_state.current_ip = ip['name']
+                    st.session_state.show_detail = True
 
-            # 处理详情按钮点击事件
-            if detail_clicked:
-                st.session_state.show_detail = True
-                st.session_state.current_ip = ip['name']
-                st.rerun()
     else:
         st.markdown('<div style="text-align:center; padding:20px; color:#6b7280;">暂无符合条件的IP数据</div>', unsafe_allow_html=True)
 
@@ -1165,117 +1058,236 @@ with tab1:
         <div class="page-btn">▶</div>
     </div>
     """, unsafe_allow_html=True)
-
-    # 详情弹窗
-    if st.session_state.get("show_detail") and st.session_state.get("current_ip") in ip_detail_data:
+    
+    @st.dialog(f"{st.session_state.current_ip} IP详细分析报告", width="large")
+    def show_ip_detail():
         detail = ip_detail_data[st.session_state.current_ip]
         
-        # 创建一个隐藏的Streamlit按钮用于接收关闭事件
-        st.markdown("""
-        <style>
-            div[data-testid="stButton"][key="close_detail"] {
-                display: none !important;
-            }
-        </style>
-        """, unsafe_allow_html=True)
+        # 第一行：雷达图 + 优势因子
+        row1_col1, row1_col2 = st.columns(2)
         
-        # 添加隐藏的关闭按钮
-        close_clicked = st.button("", key="close_detail")
+        with row1_col1:
+            # 左侧：雷达图
+            st.markdown('<h4>📊 10维评分雷达图</h4>', unsafe_allow_html=True)
+            fig_radar = go.Figure()
+            fig_radar.add_trace(go.Scatterpolar(
+                r=detail["radar_values"],
+                theta=detail["radar_labels"],
+                fill='toself',
+                name=st.session_state.current_ip
+            ))
+            
+            fig_radar.update_layout(
+                polar=dict(
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, max(detail["radar_max"])],
+                        tickfont=dict(size=8)  # 设置坐标轴刻度字体大小
+                    ),
+                    angularaxis=dict(
+                        tickfont=dict(size=8)   # 设置角度轴标签字体大小
+                    )
+                ),
+                showlegend=False,
+                height=200,
+                margin=dict(l=40, r=40, t=20, b=20),
+                font=dict(size=8)  # 全局字体设置
+            )
+            
+            st.plotly_chart(fig_radar, use_container_width=True)
         
-        # 处理关闭按钮点击事件
-        if close_clicked:
-            st.session_state.show_detail = False
-            st.session_state.current_ip = ""
-            st.rerun()
-        
-        # 渲染弹窗HTML
-        st.markdown(f"""
-        <div class="modal-overlay" id="modal-overlay">
-            <div class="modal-content">
-                <div class="modal-title">
-                    <span>ℹ️</span> {st.session_state.current_ip} IP详细分析报告
-                    <button id="modal-close-btn" class="modal-close-btn">✕</button>
-                </div>
-                <div class="report-grid">
-                    <div class="report-card">
-                        <h4>📊 10维评分雷达图明细</h4>
-                    </div>
-                    <div class="report-card">
-                        <h4>✅ 优势因子</h4>
-                        {''.join([f'<div class="advantage-item">{item}</div>' for item in detail["advantages"]])}
-                    </div>
-                    <div class="report-card">
-                        <h4>⚠️ 注意事项</h4>
-                        {''.join([f'<div class="note-item">{item}</div>' for item in detail["notes"]])}
-                    </div>
-                    <div class="report-card">
-                        <h4>📈 预计表现</h4>
-                        {''.join([f'<div class="performance-row"><span class="performance-label">{k}</span><span class="performance-value">{v}</span></div>' for k, v in detail["performance"].items()])}
-                    </div>
-                </div>
-                <div class="report-card audience-grid">
-                    <h4>👥 受众画像</h4>
-                    <div class="audience-stats">
-                        {''.join([f'<div class="stat-item"><div class="stat-value">{v}%</div><div class="stat-label">{k}</div></div>' for k, v in zip(detail["audience"]["labels"], detail["audience"]["values"])])}
-                    </div>
-                </div>
-                <div class="report-pagination">
-                    <div class="report-page-btn">◀</div>
-                    <div class="report-page-btn active">1</div>
-                    <div class="report-page-btn">2</div>
-                    <div class="report-page-btn">3</div>
-                    <div class="report-page-btn">4</div>
-                    <div class="report-page-btn">5</div>
-                    <div class="report-page-btn">▶</div>
-                </div>
+        with row1_col2:
+            # 右侧：优势因子
+            st.markdown("""
+            <div class="report-card">
+                <h4>✅ 优势因子</h4>
+                {advantages}
             </div>
+            """.format(
+                advantages=''.join([f'<div class="advantage-item">{item}</div>' for item in detail["advantages"]])
+            ), unsafe_allow_html=True)
+        
+        # 第二行：注意事项 + 预计表现
+        row2_col1, row2_col2 = st.columns(2, gap="small")
+
+        with row2_col1:
+            # 左侧：注意事项
+            with st.container():
+                st.markdown("""
+                <div class="report-card" style="height: 220px; overflow-y: auto;">
+                    <h4 style="margin-top: 0; margin-bottom: 10px;">⚠️ 注意事项</h4>
+                    {notes}
+                </div>
+                """.format(
+                    notes=''.join([f'<div class="note-item" style="margin: 8px 0;">{item}</div>' for item in detail["notes"]])
+                ), unsafe_allow_html=True)
+
+        with row2_col2:
+            # 右侧：预计表现
+            with st.container():
+                st.markdown("""
+                <div class="report-card" style="height: 220px; overflow-y: auto;">
+                    <h4 style="margin-top: 0; margin-bottom: 10px;">📈 预计表现</h4>
+                    {performance}
+                </div>
+                """.format(
+                    performance=''.join([f'<div class="performance-row" style="padding: 8px 0;"><span class="performance-label">{k}</span><span class="performance-value" style="float: right;">{v}</span></div>' for k, v in detail["performance"].items()])
+                ), unsafe_allow_html=True)
+        
+        # 第三行：受众画像 + 词云图
+        st.markdown('<h4 style="margin-top: 20px;">👥 受众画像 & 关键词云</h4>', unsafe_allow_html=True)
+
+        # 创建两列布局
+        aud_col1, aud_col2 = st.columns(2)
+
+        with aud_col1:
+            # 左侧：原有的受众画像（包含统计数据和饼图）
+            # 在左侧内部再创建两列布局，让统计数据和饼图并排
+            inner_col1, inner_col2 = st.columns([1,2])
+            
+            with inner_col1:
+                # 受众统计数据
+                for label, value in zip(detail["audience"]["labels"], detail["audience"]["values"]):
+                    st.markdown(f"""
+                    <div style="margin-bottom:15px;">
+                        <div style="font-size:13px; color:#4b5563; margin-bottom:2px;">{label}</div>
+                        <div style="font-size:18px; font-weight:600; color:#2563eb;">{value} TGI</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            with inner_col2:
+                # 饼图
+                fig_donut = go.Figure(data=[go.Pie(
+                    labels=detail["audience"]["labels"],
+                    values=detail["audience"]["values"],
+                    hole=0.6,
+                    marker_colors=detail["audience"]["colors"],
+                    textinfo='label+percent',  # 显示标签和百分比
+                    hoverinfo='label+percent',
+                    textposition='auto',  # 自动调整文字位置
+                    insidetextorientation='radial'  # 文字方向
+                )])
+                
+                fig_donut.update_layout(
+                    height=300,
+                    showlegend=False,
+                    margin=dict(l=20, r=20, t=20, b=20)
+                )
+                
+                st.plotly_chart(fig_donut, use_container_width=True)
+
+        with aud_col2:
+            
+            # 获取词云数据
+            ip_name = st.session_state.current_ip
+            if "好好的时光" in ip_name:
+                words = [
+                    ("亲子", 28, "#e5392e"), ("治愈家庭", 26, "#1d4ed8"), ("女性向", 22, "#7c3aed"),
+                    ("情感", 24, "#dc2626"), ("都市", 20, "#374151"), ("孙莉主演", 23, "#b45309"),
+                    ("口碑", 25, "#065f46"), ("金牌导演", 21, "#b45309"), ("腾讯视频", 19, "#1d4ed8"),
+                    ("温情", 24, "#9d174d")
+                ]
+            elif "巧虎" in ip_name:
+                words = [
+                    ("早教", 28, "#065f46"), ("亲子成长", 25, "#b45309"), ("卡通", 23, "#e5392e"),
+                    ("0-6岁", 22, "#374151"), ("家庭", 24, "#1d4ed8"), ("科学育儿", 21, "#b45309"),
+                    ("日本IP", 20, "#065f46"), ("启蒙", 26, "#7c3aed"), ("玩具", 19, "#9d174d")
+                ]
+            elif "亲子运动会" in ip_name:
+                words = [
+                    ("亲子运动", 28, "#9d174d"), ("健康家庭", 25, "#065f46"), ("全国巡回", 22, "#b45309"),
+                    ("体育赛事", 24, "#7c3aed"), ("线下活动", 21, "#374151"), ("品牌冠名", 23, "#e5392e"),
+                    ("10城", 20, "#5b21b6"), ("户外", 19, "#0369a1"), ("活力", 26, "#b91c1c")
+                ]
+            elif "小欢喜" in ip_name:
+                words = [
+                    ("家庭情感", 27, "#1d4ed8"), ("教育焦虑", 24, "#b45309"), ("暑期档", 22, "#7c3aed"),
+                    ("成长", 23, "#065f46"), ("亲子关系", 26, "#e5392e"), ("高考", 25, "#9d174d"),
+                    ("家庭教育", 28, "#b91c1c"), ("黄磊", 21, "#0369a1"), ("海清", 20, "#5b21b6")
+                ]
+            elif "年糕妈妈" in ip_name:
+                words = [
+                    ("科学育儿", 28, "#5b21b6"), ("带货", 26, "#065f46"), ("辅食", 24, "#b45309"),
+                    ("婴儿护理", 23, "#e5392e"), ("垂直达人", 22, "#374151"), ("好物推荐", 25, "#7c3aed"),
+                    ("母婴", 27, "#1d4ed8"), ("测评", 21, "#9d174d"), ("宝妈", 26, "#b91c1c")
+                ]
+            else:
+                words = [
+                    ("亲子", 28, "#1d4ed8"), ("家庭", 26, "#065f46"), ("教育", 24, "#b45309"),
+                    ("成长", 25, "#7c3aed"), ("健康", 23, "#e5392e"), ("情感", 22, "#9d174d"),
+                    ("娱乐", 21, "#0369a1"), ("消费", 20, "#5b21b6"), ("品质", 22, "#b91c1c")
+                ]
+            
+            # 创建词云图（使用散点图模拟）
+            import random
+            random.seed(42)
+            
+            fig_wordcloud = go.Figure()
+            
+            for word, size, color in words:
+                # 生成随机位置
+                x = random.uniform(10, 90)
+                y = random.uniform(10, 90)
+                
+                fig_wordcloud.add_trace(go.Scatter(
+                    x=[x],
+                    y=[y],
+                    mode='text',
+                    text=[word],
+                    textfont=dict(
+                        size=size,
+                        color=color,
+                        family='Noto Sans SC, sans-serif',
+                        weight='bold' if size > 24 else 'normal'
+                    ),
+                    hoverinfo='text',
+                    hovertext=f'{word} ({size})',
+                    showlegend=False
+                ))
+            
+            fig_wordcloud.update_layout(
+                xaxis=dict(
+                    showgrid=False,
+                    showticklabels=False,
+                    zeroline=False,
+                    range=[0, 100]
+                ),
+                yaxis=dict(
+                    showgrid=False,
+                    showticklabels=False,
+                    zeroline=False,
+                    range=[0, 100]
+                ),
+                height=250,
+                margin=dict(l=10, r=10, t=10, b=10),
+                plot_bgcolor='#f8fafc',  # 浅灰色背景
+                paper_bgcolor='rgba(0,0,0,0)',
+                hovermode='closest'
+            )
+            
+            st.plotly_chart(fig_wordcloud, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+        # 底部分页
+        st.markdown("""
+        <div style="display:flex; justify-content:center; gap:8px; margin-top:20px;">
+            <div class="report-page-btn">◀</div>
+            <div class="report-page-btn active">1</div>
+            <div class="report-page-btn">2</div>
+            <div class="report-page-btn">3</div>
+            <div class="report-page-btn">4</div>
+            <div class="report-page-btn">5</div>
+            <div class="report-page-btn">▶</div>
         </div>
         """, unsafe_allow_html=True)
-        
-        # 添加JavaScript事件处理
-        st.components.v1.html("""
-        <script>
-            window.addEventListener('load', function() {
-                const modalOverlay = document.getElementById('modal-overlay');
-                const modalCloseBtn = document.getElementById('modal-close-btn');
-                
-                if (modalOverlay && modalCloseBtn) {
-                    // 点击关闭按钮关闭弹窗
-                    modalCloseBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        // 获取隐藏的Streamlit按钮并触发点击
-                        const closeButton = document.querySelector('[data-testid="stButton"][key="close_detail"] > button');
-                        if (closeButton) {
-                            closeButton.click();
-                        }
-                    });
-                    
-                    // 点击遮罩层关闭弹窗
-                    modalOverlay.addEventListener('click', function(e) {
-                        if (e.target === modalOverlay) {
-                            const closeButton = document.querySelector('[data-testid="stButton"][key="close_detail"] > button');
-                            if (closeButton) {
-                                closeButton.click();
-                            }
-                        }
-                    });
-                }
-            });
-        </script>
-        """, height=0)
 
-
-
-
-
-
-
-
-
-
+    # 调用 dialog
+    if st.session_state.get("show_detail"):
+        show_ip_detail()
 
 # ═══════ TAB 2: 智能问答 ═══════════════════════════════════════════════════════════════
 with tab2:
+
+    
     sb_col, chat_col = st.columns([1, 3.5])
     with sb_col:
         st.markdown('<div class="sb-bot"><span style="font-size:20px;">🤖</span><div><div style="font-size:13px;font-weight:700;">IP投资顾问</div><div style="font-size:10.5px;opacity:.8;">智能分析 · 实时推荐</div></div></div>', unsafe_allow_html=True)
