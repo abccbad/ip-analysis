@@ -6,3 +6,4 @@ numpy>=1.23.5
 reportlab>=4.0.0
 pillow>=9.0.0
 openpyxl
+streamlit_modal
